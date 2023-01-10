@@ -1,10 +1,9 @@
-var importButtonHTML = '<button style="background: steelblue;" id="import-button" class="btn accent-4">Import Schedule</button>';
 var exportToIcsButtonHTML = '<button id="export-ics-button" class="btn accent-4" style="margin: 5px 0;letter-spacing: 0px;">Export to .ics file</button>';
 var banner_example_image = "<img id='banner-example-image' src='banner-example.png' style='width: 100%'>"
 // var authenticateButtonHTML = '<button id="authenticate-button" class="btn red accent-4" style="letter-spacing: 0px;">Allow Google Calendar Access</button>';
 var authenticateButtonHTML = '<p><strong style="display: inline-block; vertical-align: 1em;">Authenticate app with:&nbsp</strong> <input type="image" style="height: 40px;" src="icons/google_button_short.png" name="authenticateUser" class="btTxt submit" id="authenticate-button"/></p>';
 var courses = null;
-// is_app_authorized();
+
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 
 	if (message["data"] === "schedule_details_not_selected") {
@@ -32,7 +31,7 @@ window.onload = function() {
 
 	   		document.getElementById("redirect-button").remove();
 	   	} else {
-	   		document.getElementById("pagecodediv").innerHTML = "<p>Please navigate to the Banner Schedule Details page as shown below and return to the extension: (<a target='_blank' href='https://abelweldaregay.github.io/Banner-GCal-Schedule-Importer/help'> click here for help</a> )</p> <b> <img id='banner-example-image' src='banner-example.png' style='width: 100%'> <br>";
+	   		document.getElementById("pagecodediv").innerHTML = "<p>Please navigate to the Banner Schedule Details page as shown below and return to the extension:</p> <b> <img id='banner-example-image' src='banner-example.png' style='width: 100%'>";
    			document.getElementById("banner-example-image").style.display = "block";
 	   	}
 	    // use `url` here inside the callback because it's asynchronous!
@@ -41,73 +40,35 @@ window.onload = function() {
 
 };
 
-
-function is_app_authorized() {
-	chrome.identity.getAuthToken({
-		"interactive": false
-	}, function(token) {
-		console.log("token: " + token);
-		if (!token) {
-			return false;
-		} else {
-			return true;
-		}
-	});
-}
-
-
  async function update_table() {
-	chrome.identity.getAuthToken({
-		"interactive": false
-	}, function(token) {
-		console.log("token: " + token);
-		if (!token) {
-			// Add event listener for import schedule button
-			document.querySelector('#pagecodediv').innerHTML = "</br>You've come to the correct page! Please authorize this chrome extension to import your schedule!<br/><br/>After authenticating, come back to this page and use the extension again! The \"Allow Access\" button will change to allow importing!<br/><br/>";
-			document.querySelector('#pagecodediv').innerHTML += authenticateButtonHTML;
-
-			document.getElementById("authenticate-button").addEventListener("click", function() {
-			authenticate();		
-		}, false);
-		} else {
-			document.querySelector('#button-div').innerHTML = importButtonHTML;
-			document.querySelector('#button-div').innerHTML += "<br>" + exportToIcsButtonHTML
-			var importScheduleButton = document.getElementById('import-button');
-			var exportToICSButton = document.getElementById("export-ics-button");
-			importScheduleButton.addEventListener('click', function () {
-				ga('_trackEvent', 'importButton', 'clicked');
-				 importSchedule(courses, courses[0].selected_semester, courses[0].meeting_window[1]);
-			}, false);
-			exportToICSButton.addEventListener("click", function() {
-				document.getElementById("export-ics-button").remove();
-				document.getElementById("import-button").remove();
-				document.getElementById("pagecodediv").innerHTML = "<br>Once it finishes downloading, upload it to <a target='_blank' href='https://calendar.google.com/calendar/r/settings/export'>Google calendar</a> or Microsoft Outlook Calendar yourself! </br></br>Make sure to create a new empty calendar to upload to if you prefer your course schedule in its own separate calendar."
-				exportScheduleToIcs(courses, courses[0].selected_semester, courses[0].meeting_window[1]);
-			}, false);
-			
-		    build_preview();
-			var i = 0;
-			while (i < courses.length) {
-				document.getElementById(courses[i].id + "-button").addEventListener("click", function() {
-					console.log(this.id);
-					var course_id = this.id.replace("-button", "");
-					document.getElementById(this.id.replace("-button", "")).remove();
-					remove_course(course_id);
-				});
-				if (courses[i]["meeting_days"] === undefined)
-					i += 1;
-				else
-					i += courses[i]["meeting_days"].length;
-			}
-
-		}
-	});
+	document.querySelector('#button-div').innerHTML += "<br>" + exportToIcsButtonHTML;
+	var exportToICSButton = document.getElementById("export-ics-button");
+	exportToICSButton.addEventListener("click", function() {
+		document.getElementById("export-ics-button").remove();
+		document.getElementById("pagecodediv").innerHTML = "<br>Once it finishes downloading, upload it to <a target='_blank' href='https://calendar.google.com/calendar/r/settings/export'>Google calendar</a> or Microsoft Outlook Calendar yourself! </br></br>Make sure to create a new empty calendar to upload to if you prefer your course schedule in its own separate calendar."
+		exportScheduleToIcs(courses, courses[0].selected_semester, courses[0].meeting_window[1]);
+	}, false);
+	
+	build_preview();
+	var i = 0;
+	while (i < courses.length) {
+		document.getElementById(courses[i].id + "-button").addEventListener("click", function() {
+			console.log(this.id);
+			var course_id = this.id.replace("-button", "");
+			document.getElementById(this.id.replace("-button", "")).remove();
+			remove_course(course_id);
+		});
+		if (courses[i]["meeting_days"] === undefined)
+			i += 1;
+		else
+			i += courses[i]["meeting_days"].length;
+	}
 }
 
 function build_preview() {
 	var table_str = "";
 	// document.getElementById("pagecodediv").innerHTML = "";
-	table_str += "<p>Here is what I found: </p>";
+	table_str += "<p>Here are all courses found: </p>";
 	document.getElementById("schedule").innerHTML = "";
 	// opens a communication between scripts
 	// document.getElementById("banner-example-image").style.display = "none";
@@ -171,7 +132,6 @@ function build_preview() {
 	table_str += "<hr>";
 	if (all_courses_online === true) {
 		document.querySelector("#pagecodediv").innerHTML = "<br> All of the courses for the selected semester are all online and do not have a meeting time.<br><br> Please select a different semester and return to this page to continue.";
-		document.querySelector('#import-button').remove();
 		document.querySelector('#export-ics-button').remove();
 	} else {
 		document.getElementById("schedule").innerHTML = table_str;
@@ -184,7 +144,6 @@ function remove_course(id) {
 	});
 	if (courses.length <= 0) {
 		document.querySelector("#pagecodediv").innerHTML = "<br> There are no courses left to import/export, Please try again.";
-		document.querySelector('#import-button').remove();
 		document.querySelector('#export-ics-button').remove();
 	}
 }
@@ -197,57 +156,6 @@ function authenticate() {
   }, function (token) {
     // Check the token.
     console.log(token);
-  });
-}
-
-function importSchedule(courseEventInfo, viewedSemester, semEndDate) {
-  document.querySelector('#import-button').className += " disabled";
-  document.querySelector('#export-ics-button').className += " disabled";
-  var pagecodediv = document.querySelector('#pagecodediv');
-  pagecodediv.innerHTML = 'Importing your schedule...';
-  if (all_courses_online(courseEventInfo) === true)
-  {
-      pagecodediv.innerHTML = "<br>All of the courses for the selected semester are all online and do not have meeting times, Please select a semester that has at least one course with a meeting time and return to this page.";
-      document.querySelector('#import-button').remove();
-      document.querySelector('#export-ics-button').remove();
-      return;
-  }
-  chrome.identity.getAuthToken({
-    'interactive': true
-  }, function (token) {
-    // Use the token.
-    console.log(token);
-    // POST request to create a new calendar
-    var url = "https://www.googleapis.com/calendar/v3/calendars";
-    var params = {
-      "summary": viewedSemester + " Schedule",
-      "timeZone": "America/New_York"
-    };
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", url, true);
-
-    //Send the proper header information along with the request
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-
-    xhr.onreadystatechange = function () {
-      if (xhr.readyState == XMLHttpRequest.DONE) {
-        if (xhr.status === 200) {
-          var newCalId = (JSON.parse(xhr.responseText).id);
-          document.querySelector('#import-button').remove();
-          document.querySelector('#export-ics-button').remove();
-          importEvents(newCalId, token, courseEventInfo, semEndDate);
-        } else {
-          console.log("Error", xhr.statusText);
-          pagecodediv.innerHTML = 'Uh Oh! Something went wrong...Sorry about the inconvenience! Feel free to shoot abelweldaregay@gmail.com an email so we know we\'re down!<br>';
-          pagecodediv.innerHTML += "In the meantime, you can export your schedule as a .ics file and <a href='https://calendar.google.com/calendar/r/settings/export'>upload it to Google Calendar yourself</a>! Make sure to create a new empty calendar to upload to if you prefer your course schedule in its own separate calendar.";
-          document.querySelector('#export-ics-button').className = "btn accent-4";
-    
-        }
-      }
-    }
-
-    xhr.send(JSON.stringify(params));
   });
 }
 
@@ -292,7 +200,7 @@ async function exportScheduleToIcs(courseEventInfo, viewedSemester, semEndDate) 
 	await adjust_datetime(course, classStartDate, classEndDate);
 	
     const summary = course.course_title;
-    const description = "CRN: " + course.course_crn + "<br>" + "Room: " + course.meeting_room + "<br>" + "Instructor: " + course.instructor_name;
+    const description = "Room: " + course.meeting_room + "<br>Instructor: " + course.instructor_name + "<br>CRN: " + course.course_crn;
     const location = course.meeting_building;
     const begin = classStartDate.toJSON();
     const end = classEndDate.toJSON();
@@ -301,7 +209,6 @@ async function exportScheduleToIcs(courseEventInfo, viewedSemester, semEndDate) 
 
   const filename = viewedSemester;
   cal.download(filename);
-    ga("send", "event", "Export", "Click", "Export Schedule");
 }
 
 function delete_course(course_id) {
@@ -418,6 +325,5 @@ async function importEvents(calId, token, courseEventInfo, semEndDate) {
 
 // After schedule has been imported
 function postImportActions() {
-  ga("send", "event", "Import", "Click", "Import Schedule");
   window.open('https://calendar.google.com/calendar/render#main_7%7Cmonth', '_blank');
 }

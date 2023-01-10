@@ -91,7 +91,7 @@ function extract_schedule() {
                     data: schedule
                 }, function (response) {
                     console.dir(response);
-    			    });
+    			});
 	   	}
 	}
 	}
