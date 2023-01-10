@@ -10,7 +10,7 @@ body {
   max-width: 400px;
 }
 .nav {
-  background: dodgerblue;
+  background: black;
 }
 i:hover {
   cursor: pointer;
