@@ -11,14 +11,16 @@ function extract_schedule() {
 	   	chrome.runtime.sendMessage({
         data: "schedule_details_not_selected"
     	}, function (response) {
-        	console.dir(response);
+        	// console.dir(response);
 	    });
 	} else {
 		for (var i = 0; i < child_divs.length; ++i) {
 			var meeting_days = child_divs[i].getElementsByClassName("listViewMeetingInformation")[0].getElementsByClassName("ui-pillbox-summary")[0].innerText.split(",");
 			var course_title = course_names[i+1].getElementsByTagName("td")[1].innerText.substring(0, course_names[i+1].getElementsByTagName("td")[1].innerText.indexOf(","));
-			var instructor_name = child_divs[i].getElementsByClassName("listViewInstructorInformation")[0].innerText.split("\n")[0].split(":")[1];
-			course_crn = child_divs[i].getElementsByClassName("listViewInstructorInformation")[0].innerText.split("\n")[1].split(":")[1];
+			var course_info = child_divs[i].getElementsByClassName("listViewInstructorInformation")[0].innerText;
+			var instructor_name = course_info.split("\n")[0].split(":")[1];
+			course_crn = course_info.substring(course_info.indexOf("CRN:")).split(":")[1];
+
 			if (meeting_days[0] === "None") {
 				schedule.push({
 					 "id"				: uuidv4(),
@@ -44,45 +46,40 @@ function extract_schedule() {
 						var meeting_days = child_divs[i].getElementsByClassName("listViewMeetingInformation")[0].getElementsByClassName("list-view-pillbox")[x].innerText.split("\n")[0].split(",");
 						var meeting_room = child_divs[i].getElementsByClassName("listViewMeetingInformation")[0].innerHTML.split("<br>")[x].substr(-4).replace(/\D/g, "");
 						var id = uuidv4();
-						for (var j = 0; j < meeting_days.length; ++j) {
-							schedule.push({
-								 "id"				: id,
-								 "course_title"	    : course_title,
-								 "instructor_name"  : instructor_name,
-								 "course_crn"       : course_crn,
-					 			 "meeting_window"   : meeting_window,
-								 "meeting_days"     : child_divs[i].getElementsByClassName("listViewMeetingInformation")[0].getElementsByClassName("ui-pillbox-summary")[x].innerText.split(","),
-								 "meeting_times"    : meeting_times,
-								 "meeting_building" : meeting_building,
-								 "meeting_room"     : meeting_room,
-								 "course_type"	    : "In-Person",
-								 "selected_semester": selected_semester,
-								 "meeting_day"		: meeting_days[j],
-								 "group"			: i,
-							});
-						}
+
+						schedule.push({
+							"id": id,
+							"course_title"		: course_title,
+							"instructor_name"	: instructor_name,
+							"course_crn"		: course_crn,
+							"meeting_window"	: meeting_window,
+							"meeting_days"		: child_divs[i].getElementsByClassName("listViewMeetingInformation")[0].getElementsByClassName("ui-pillbox-summary")[x].innerText.split(","),
+							"meeting_times"		: meeting_times,
+							"meeting_building"	: meeting_building,
+							"meeting_room"		: meeting_room,
+							"course_type"		: "In-Person",
+							"selected_semester"	: selected_semester,
+							"group": i,
+						});
 					}
 				} else {
 					var id = uuidv4();
-					for (var k = 0; k < meeting_days.length; ++k) {
-						
-						schedule.push({
-							 "id"				: id,
-							 "course_title"	    : course_title,
-							 "instructor_name"  : instructor_name,
-							 "course_crn"       : course_crn,
-				 			 "meeting_window"   : meeting_window,
-							 "meeting_days"     : meeting_days,
-							 "meeting_times"    : meeting_times,
-							 "meeting_building" : meeting_building,
-							 "meeting_room"     : child_divs[i].getElementsByClassName("listViewMeetingInformation")[0].innerText.split(":")[6],
-							 "course_type"	    : "In-Person",
-							 "selected_semester": selected_semester,
-							 "meeting_day"		: meeting_days[k],
-							 "group"			: i
-						});
 
-					}
+					schedule.push({
+						"id": id,
+						"course_title": course_title,
+						"instructor_name": instructor_name,
+						"course_crn": course_crn,
+						"meeting_window": meeting_window,
+						"meeting_days": meeting_days,
+						"meeting_times": meeting_times,
+						"meeting_building": meeting_building,
+						"meeting_room": child_divs[i].getElementsByClassName("listViewMeetingInformation")[0].innerText.split(":")[6],
+						"course_type": "In-Person",
+						"selected_semester": selected_semester,
+						"group": i
+					});
+
 				}
 
 			}
@@ -90,7 +87,7 @@ function extract_schedule() {
 		   	chrome.runtime.sendMessage({
                     data: schedule
                 }, function (response) {
-                    console.dir(response);
+                    // console.dir(response);
     			});
 	   	}
 	}

@@ -1,4 +1,4 @@
-var exportToIcsButtonHTML = '<button id="export-ics-button" class="btn accent-4" style="margin: 5px 0;letter-spacing: 0px;">Export to .ics file</button>';
+var exportToIcsButtonHTML = '<button id="export-ics-button" class="btn accent-4" style="margin: 5px 0;letter-spacing: 0px;"><i class="material-icons left fa fa-download"></i>Export to .ics file</button>';
 var banner_example_image = "<img id='banner-example-image' src='banner-example.png' style='width: 100%'>"
 // var authenticateButtonHTML = '<button id="authenticate-button" class="btn red accent-4" style="letter-spacing: 0px;">Allow Google Calendar Access</button>';
 var authenticateButtonHTML = '<p><strong style="display: inline-block; vertical-align: 1em;">Authenticate app with:&nbsp</strong> <input type="image" style="height: 40px;" src="icons/google_button_short.png" name="authenticateUser" class="btTxt submit" id="authenticate-button"/></p>';
@@ -45,23 +45,18 @@ window.onload = function() {
 	var exportToICSButton = document.getElementById("export-ics-button");
 	exportToICSButton.addEventListener("click", function() {
 		document.getElementById("export-ics-button").remove();
-		document.getElementById("pagecodediv").innerHTML = "<br>Once it finishes downloading, upload it to <a target='_blank' href='https://calendar.google.com/calendar/r/settings/export'>Google calendar</a> or Microsoft Outlook Calendar yourself! </br></br>Make sure to create a new empty calendar to upload to if you prefer your course schedule in its own separate calendar."
+		document.getElementById("pagecodediv").innerHTML = "<br>Once it finishes downloading, upload it to <a target='_blank' href='https://calendar.google.com/calendar/r/settings/export'>Google Calendar</a>, or import the file into another calendar app yourself. </br></br>Make sure to create a new empty calendar upon importing if you prefer your course schedule in its own separate calendar."
 		exportScheduleToIcs(courses, courses[0].selected_semester, courses[0].meeting_window[1]);
 	}, false);
 	
 	build_preview();
-	var i = 0;
-	while (i < courses.length) {
+	for (let i = 0; i < courses.length; i++) {
 		document.getElementById(courses[i].id + "-button").addEventListener("click", function() {
 			console.log(this.id);
 			var course_id = this.id.replace("-button", "");
 			document.getElementById(this.id.replace("-button", "")).remove();
 			remove_course(course_id);
 		});
-		if (courses[i]["meeting_days"] === undefined)
-			i += 1;
-		else
-			i += courses[i]["meeting_days"].length;
 	}
 }
 
@@ -72,9 +67,8 @@ function build_preview() {
 	document.getElementById("schedule").innerHTML = "";
 	// opens a communication between scripts
 	// document.getElementById("banner-example-image").style.display = "none";
-	var i = 0;
 	var all_courses_online = true;
-	 while(i < courses.length){
+	 for(let i = 0; i < courses.length; i++){
 		
 	   		table_str += "<div id = '" + courses[i]["id"] + "'>";
 			table_str += "<hr>";   
@@ -123,11 +117,9 @@ function build_preview() {
 		   		}
 	   			table_str += courses[i]["meeting_times"][0] + " to " + courses[i]["meeting_times"][1];
 	   			// step_size += courses[i]["meeting_days"].length - 1;
-				i += courses[i]["meeting_days"].length - 1;
 				
 				table_str += "</div>";
-			}			   		
-			i += 1;
+			}
 	}
 	table_str += "<hr>";
 	if (all_courses_online === true) {
@@ -184,12 +176,6 @@ async function exportScheduleToIcs(courseEventInfo, viewedSemester, semEndDate) 
   var semEndDateParam = new Date(semEndDate);
   semEndDateParam.setDate(semEndDateParam.getDate() + 1);
 
-  rrule = {
-    freq: 'WEEKLY',
-    until: semEndDateParam.toJSON(),
-    // TODO: consider using byday property to only store each course as one event.
-  };
-
   for (var i = 0; i < courseEventInfo.length; i++) {
     var course = courseEventInfo[i];
     if (course.meeting_times === "Online" || course.meeting_times === undefined)
@@ -198,6 +184,12 @@ async function exportScheduleToIcs(courseEventInfo, viewedSemester, semEndDate) 
 	var classEndDate = new Date(new Date(course.meeting_window[0]));
 	
 	await adjust_datetime(course, classStartDate, classEndDate);
+
+	rrule = {
+		freq: 'WEEKLY',
+		byday: course.meeting_days.map(meeting_day => byday_format_day(meeting_day)),
+		until: semEndDateParam.toJSON(),
+	};
 	
     const summary = course.course_title;
     const description = "Room: " + course.meeting_room + "<br>Instructor: " + course.instructor_name + "<br>CRN: " + course.course_crn;
@@ -215,40 +207,57 @@ function delete_course(course_id) {
 	alert(course_id);
 }
 
-function adjust_datetime(course, classStartDate, classEndDate) {
-	var semFirstDay = new Date(course.meeting_window[0]);
-	semFirstDay = semFirstDay.getDay();	
-	var classStartDay = 0;
-
-	switch(course.meeting_day) {
+function byday_format_day(meeting_day) {
+	switch (meeting_day) {
+		case "Sunday":
+			return "SU";
 		case "Monday":
-			classStartDay = 1;
-			break;
+			return "MO";
 		case "Tuesday":
-			classStartDay = 2;
-			break;
+			return "TU";
 		case "Wednesday":
-			classStartDay = 3;
-			break;
+			return "WE"
 		case "Thursday":
-			classStartDay = 4;
-			break;
+			return "TH";
 		case "Friday":
-			classStartDay = 5;
-			break;
+			return "FR";
+		case "Saturday":
+			return "SA";
 	}
 
-	var dayOffset = semFirstDay - classStartDay;
+	return undefined;
+}
+
+function adjust_datetime(course, classStartDate, classEndDate) {
+	var semFirstDay = new Date(course.meeting_window[0]);
+	semFirstDay = semFirstDay.getDay();
+	let classDays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+	var classStartDay = 0;
+
+	for (let i = 0; i < course.meeting_days.length; i++) {
+		classStartDay = classDays.indexOf(course.meeting_days[i]);
+
+		dayOffset = semFirstDay - classStartDay;
+		// select the class start day that occurs on/after the semester begins
+		if (dayOffset <= 0) break;
+	}
+
+	// no class start days occurred after the semester started, start next week
+	if (dayOffset > 0) classStartDay = classDays.indexOf(course.meeting_days[0]);
+
+	dayOffset = semFirstDay - classStartDay;
 	
 	if (dayOffset == 0) {	// class day is same as semester start day
 		//do nothing; the day is correct
-	} else if (dayOffset > 0) {	// class day is before semester start day (need to go to next week)
+	} else if (dayOffset > 0) {	// first class day is before semester start day
+		// start the second week of the semester
 		classStartDate.setDate(classStartDate.getDate() + 7 - dayOffset);
 		classEndDate.setDate(classEndDate.getDate() + 7 - dayOffset);
-	} else {
-		classStartDate.setDate(classStartDate.getDate() + Math.abs(dayOffset) );
-		classEndDate.setDate(classEndDate.getDate() + Math.abs(dayOffset) );
+	} else { // first class day is after semester start day
+		classStartDate.setDate(classStartDate.getDate() + Math.abs(dayOffset));
+		classEndDate.setDate(classEndDate.getDate() + Math.abs(dayOffset));
 	}
+
 	classStartDate.setHours(parseInt(course.meeting_times[0].match(/(\d+)/g)[0]));
 	classStartDate.setMinutes(parseInt(course.meeting_times[0].match(/(\d+)/g)[1]));
 
