@@ -1,7 +1,5 @@
 var exportToIcsButtonHTML = '<button id="export-ics-button" class="btn accent-4" style="margin: 5px 0;letter-spacing: 0px;"><i class="material-icons left fa fa-download"></i>Export to .ics file</button>';
 var banner_example_image = "<img id='banner-example-image' src='banner-example.png' style='width: 100%'>"
-// var authenticateButtonHTML = '<button id="authenticate-button" class="btn red accent-4" style="letter-spacing: 0px;">Allow Google Calendar Access</button>';
-var authenticateButtonHTML = '<p><strong style="display: inline-block; vertical-align: 1em;">Authenticate app with:&nbsp</strong> <input type="image" style="height: 40px;" src="icons/google_button_short.png" name="authenticateUser" class="btTxt submit" id="authenticate-button"/></p>';
 var courses = null;
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
@@ -138,17 +136,6 @@ function remove_course(id) {
 		document.querySelector("#pagecodediv").innerHTML = "<br> There are no courses left to import/export, Please try again.";
 		document.querySelector('#export-ics-button').remove();
 	}
-}
-
-function authenticate() {
-  window.close();
-  // alert('After authenticating, come back to this page and use the extension again! The "Allow Access" button will change to allow importing!');
-  chrome.identity.getAuthToken({
-    'interactive': true
-  }, function (token) {
-    // Check the token.
-    console.log(token);
-  });
 }
 
 function all_courses_online(courseEventInfo) {

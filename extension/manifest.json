@@ -1,6 +1,6 @@
 {
 	"name": "Banner Schedule Exporter",
-	"description": "Extension that exports your class schedule from Banner. Created by Abel Weldaregay.",
+	"description": "Extension that exports your class schedule from Banner. Created by Abel Weldaregay and Chase Hartsell.",
 	"version": "1.0",
 	"icons": {
 		"16": "icons/icon16.png",
@@ -14,11 +14,16 @@
 	"manifest_version": 2,
 	"permissions": [
 		"activeTab",
-		"tabs",
-		"identity"
+		"tabs"
 	],
-  	"content_security_policy": "object-src 'self'",
-  	"background": {
-		"scripts": ["background.js"]
+	"background": {
+		"scripts": [
+			"background.js"
+		]
+	},
+	"browser_specific_settings": {
+		"gecko": {
+			"id": "quake-way0l@icloud.com"
+		}
 	}
 }
